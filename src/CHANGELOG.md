@@ -1,5 +1,17 @@
 # viem
 
+## 2.13.9
+
+### Patch Changes
+
+- [#2374](https://github.com/wevm/viem/pull/2374) [`a81965e0`](https://github.com/wevm/viem/commit/a81965e0984a2d239df0d5e989e6b2119aa4c680) Thanks [@roninjin10](https://github.com/roninjin10)! - Updated `EncodeDeployDataParameters` type.
+
+- [#2388](https://github.com/wevm/viem/pull/2388) [`895e7d11`](https://github.com/wevm/viem/commit/895e7d11a2df3d7aaf7e13476b1c893abb055aaa) Thanks [@bajpai244](https://github.com/bajpai244)! - Updated `kakarotSepolia` chain id.
+
+- [#2380](https://github.com/wevm/viem/pull/2380) [`d2de3c67`](https://github.com/wevm/viem/commit/d2de3c6713e0a79412f3bfb4cbdc1c361f68a08c) Thanks [@roninjin10](https://github.com/roninjin10)! - Added `docsBaseUrl` to `BaseError`.
+
+- [#2384](https://github.com/wevm/viem/pull/2384) [`674f65d0`](https://github.com/wevm/viem/commit/674f65d0ed3a6e8fab1bdc8a254f89200fa658ee) Thanks [@Aastha9018](https://github.com/Aastha9018)! - Added Redbelly Testnet chain.
+
 ## 2.13.8
 
 ### Patch Changes
