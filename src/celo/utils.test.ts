@@ -1,13 +1,19 @@
 import { randomBytes } from 'node:crypto'
 import type { Address } from 'abitype'
 import { beforeEach, describe, expect, test } from 'vitest'
-import { isCIP64, isEIP1559, isEmpty, isPresent } from './utils.js'
+import {
+  EMPTY_HEX_VALUE,
+  isCIP64,
+  isEIP1559,
+  isEmpty,
+  isPresent,
+} from './utils.js'
 
 let mockAddress: Address
 
 const emptyValues: any[] = [
   '0x000000',
-  '0x',
+  EMPTY_HEX_VALUE,
   0n,
   0,
   0,
@@ -176,7 +182,7 @@ describe('isCIP64', () => {
 
     expect(
       isCIP64({
-        feeCurrency: '0x',
+        feeCurrency: EMPTY_HEX_VALUE,
         maxFeePerGas: 123n,
         maxPriorityFeePerGas: 456n,
         from: mockAddress,

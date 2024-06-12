@@ -15,15 +15,19 @@ import {
 import {
   assertTransactionCIP42,
   assertTransactionCIP64,
+  assertTransactionCIP66,
 } from './serializers.js'
 import type {
   CeloTransactionSerialized,
   CeloTransactionType,
   TransactionSerializableCIP42,
   TransactionSerializableCIP64,
+  TransactionSerializableCIP66,
   TransactionSerializedCIP42,
   TransactionSerializedCIP64,
+  TransactionSerializedCIP66,
 } from './types.js'
+import { EMPTY_HEX_VALUE } from './utils.js'
 
 export type ParseTransactionReturnType<
   TSerialized extends CeloTransactionSerialized = CeloTransactionSerialized,
@@ -45,6 +49,11 @@ export function parseTransaction<TSerialized extends CeloTransactionSerialized>(
   if (serializedType === '0x7b')
     return parseTransactionCIP64(
       serializedTransaction as TransactionSerializedCIP64,
+    ) as ParseTransactionReturnType<TSerialized>
+
+  if (serializedType === '0x7a')
+    return parseTransactionCIP66(
+      serializedTransaction as TransactionSerializedCIP66,
     ) as ParseTransactionReturnType<TSerialized>
 
   return parseTransaction_(
@@ -108,22 +117,24 @@ function parseTransactionCIP42(
     type: 'cip42',
   }
 
-  if (isHex(to) && to !== '0x') transaction.to = to
-  if (isHex(gas) && gas !== '0x') transaction.gas = hexToBigInt(gas)
-  if (isHex(data) && data !== '0x') transaction.data = data
-  if (isHex(nonce) && nonce !== '0x') transaction.nonce = hexToNumber(nonce)
-  if (isHex(value) && value !== '0x') transaction.value = hexToBigInt(value)
-  if (isHex(feeCurrency) && feeCurrency !== '0x')
+  if (isHex(to) && to !== EMPTY_HEX_VALUE) transaction.to = to
+  if (isHex(gas) && gas !== EMPTY_HEX_VALUE) transaction.gas = hexToBigInt(gas)
+  if (isHex(data) && data !== EMPTY_HEX_VALUE) transaction.data = data
+  if (isHex(nonce) && nonce !== EMPTY_HEX_VALUE)
+    transaction.nonce = hexToNumber(nonce)
+  if (isHex(value) && value !== EMPTY_HEX_VALUE)
+    transaction.value = hexToBigInt(value)
+  if (isHex(feeCurrency) && feeCurrency !== EMPTY_HEX_VALUE)
     transaction.feeCurrency = feeCurrency
-  if (isHex(gatewayFeeRecipient) && gatewayFeeRecipient !== '0x')
+  if (isHex(gatewayFeeRecipient) && gatewayFeeRecipient !== EMPTY_HEX_VALUE)
     transaction.gatewayFeeRecipient = gatewayFeeRecipient
-  if (isHex(gatewayFee) && gatewayFee !== '0x')
+  if (isHex(gatewayFee) && gatewayFee !== EMPTY_HEX_VALUE)
     transaction.gatewayFee = hexToBigInt(gatewayFee)
-  if (isHex(maxFeePerGas) && maxFeePerGas !== '0x')
+  if (isHex(maxFeePerGas) && maxFeePerGas !== EMPTY_HEX_VALUE)
     transaction.maxFeePerGas = hexToBigInt(maxFeePerGas)
-  if (isHex(maxPriorityFeePerGas) && maxPriorityFeePerGas !== '0x')
+  if (isHex(maxPriorityFeePerGas) && maxPriorityFeePerGas !== EMPTY_HEX_VALUE)
     transaction.maxPriorityFeePerGas = hexToBigInt(maxPriorityFeePerGas)
-  if (accessList.length !== 0 && accessList !== '0x')
+  if (accessList.length !== 0 && accessList !== EMPTY_HEX_VALUE)
     transaction.accessList = parseAccessList(accessList as RecursiveArray<Hex>)
 
   assertTransactionCIP42(transaction as TransactionSerializableCIP42)
@@ -183,21 +194,101 @@ function parseTransactionCIP64(
     type: 'cip64',
   }
 
-  if (isHex(to) && to !== '0x') transaction.to = to
-  if (isHex(gas) && gas !== '0x') transaction.gas = hexToBigInt(gas)
-  if (isHex(data) && data !== '0x') transaction.data = data
-  if (isHex(nonce) && nonce !== '0x') transaction.nonce = hexToNumber(nonce)
-  if (isHex(value) && value !== '0x') transaction.value = hexToBigInt(value)
-  if (isHex(feeCurrency) && feeCurrency !== '0x')
+  if (isHex(to) && to !== EMPTY_HEX_VALUE) transaction.to = to
+  if (isHex(gas) && gas !== EMPTY_HEX_VALUE) transaction.gas = hexToBigInt(gas)
+  if (isHex(data) && data !== EMPTY_HEX_VALUE) transaction.data = data
+  if (isHex(nonce) && nonce !== EMPTY_HEX_VALUE)
+    transaction.nonce = hexToNumber(nonce)
+  if (isHex(value) && value !== EMPTY_HEX_VALUE)
+    transaction.value = hexToBigInt(value)
+  if (isHex(feeCurrency) && feeCurrency !== EMPTY_HEX_VALUE)
     transaction.feeCurrency = feeCurrency
-  if (isHex(maxFeePerGas) && maxFeePerGas !== '0x')
+  if (isHex(maxFeePerGas) && maxFeePerGas !== EMPTY_HEX_VALUE)
     transaction.maxFeePerGas = hexToBigInt(maxFeePerGas)
-  if (isHex(maxPriorityFeePerGas) && maxPriorityFeePerGas !== '0x')
+  if (isHex(maxPriorityFeePerGas) && maxPriorityFeePerGas !== EMPTY_HEX_VALUE)
     transaction.maxPriorityFeePerGas = hexToBigInt(maxPriorityFeePerGas)
-  if (accessList.length !== 0 && accessList !== '0x')
+  if (accessList.length !== 0 && accessList !== EMPTY_HEX_VALUE)
     transaction.accessList = parseAccessList(accessList as RecursiveArray<Hex>)
 
   assertTransactionCIP64(transaction as TransactionSerializableCIP64)
 
   return transaction as TransactionSerializableCIP64
+}
+
+function parseTransactionCIP66(
+  serializedTransaction: TransactionSerializedCIP66,
+): TransactionSerializableCIP66 {
+  const transactionArray = toTransactionArray(serializedTransaction)
+
+  const [
+    chainId,
+    nonce,
+    maxPriorityFeePerGas,
+    maxFeePerGas,
+    gas,
+    to,
+    value,
+    data,
+    accessList,
+    feeCurrency,
+    maxFeeInFeeCurrency,
+    v,
+    r,
+    s,
+  ] = transactionArray
+
+  if (transactionArray.length !== 14 && transactionArray.length !== 11) {
+    throw new InvalidSerializedTransactionError({
+      attributes: {
+        chainId,
+        nonce,
+        maxPriorityFeePerGas,
+        maxFeePerGas,
+        gas,
+        to,
+        value,
+        data,
+        accessList,
+        feeCurrency,
+        maxFeeInFeeCurrency,
+        ...(transactionArray.length > 11
+          ? {
+              v,
+              r,
+              s,
+            }
+          : {}),
+      },
+      serializedTransaction,
+      type: 'cip66',
+    })
+  }
+
+  const transaction: ExactPartial<TransactionSerializableCIP66> = {
+    chainId: hexToNumber(chainId as Hex),
+    type: 'cip66',
+  }
+
+  if (isHex(to) && to !== EMPTY_HEX_VALUE) transaction.to = to
+  if (isHex(gas) && gas !== EMPTY_HEX_VALUE) transaction.gas = hexToBigInt(gas)
+  if (isHex(data) && data !== EMPTY_HEX_VALUE) transaction.data = data
+  if (isHex(nonce) && nonce !== EMPTY_HEX_VALUE)
+    transaction.nonce = hexToNumber(nonce)
+  if (isHex(value) && value !== EMPTY_HEX_VALUE)
+    transaction.value = hexToBigInt(value)
+  if (isHex(maxFeePerGas) && maxFeePerGas !== EMPTY_HEX_VALUE)
+    transaction.maxFeePerGas = hexToBigInt(maxFeePerGas)
+  if (isHex(maxPriorityFeePerGas) && maxPriorityFeePerGas !== EMPTY_HEX_VALUE)
+    transaction.maxPriorityFeePerGas = hexToBigInt(maxPriorityFeePerGas)
+  if (accessList.length !== 0 && accessList !== EMPTY_HEX_VALUE)
+    transaction.accessList = parseAccessList(accessList as RecursiveArray<Hex>)
+
+  if (isHex(feeCurrency) && feeCurrency !== EMPTY_HEX_VALUE)
+    transaction.feeCurrency = feeCurrency
+  if (isHex(maxFeeInFeeCurrency) && maxFeeInFeeCurrency !== EMPTY_HEX_VALUE)
+    transaction.maxFeeInFeeCurrency = hexToBigInt(maxFeeInFeeCurrency)
+
+  assertTransactionCIP66(transaction as TransactionSerializableCIP66)
+
+  return transaction as TransactionSerializableCIP66
 }
