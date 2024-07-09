@@ -13,6 +13,7 @@ import { http } from '../clients/transports/http.js'
 import type { Hash } from '../types/misc.js'
 import { formatters } from './formatters.js'
 import type { CeloRpcBlock, CeloTransactionRequest } from './types.js'
+import { EMPTY_HEX_VALUE } from './utils.js'
 
 describe('block', () => {
   expectTypeOf(formatters.block.format)
@@ -146,19 +147,21 @@ describe('smoke', () => {
       | 'eip4844'
       | 'cip42'
       | 'cip64'
+      | 'cip66'
       | 'deposit'
     >()
   })
 
   test('transactionRequest (prepareTransactionRequest)', async () => {
     const client = createWalletClient({
-      account: '0x',
+      account: EMPTY_HEX_VALUE,
       chain: celo,
       transport: http(),
     })
 
     prepareTransactionRequest(client, {
-      feeCurrency: '0x',
+      feeCurrency: EMPTY_HEX_VALUE,
+      maxFeeInFeeCurrency: 2000000000n,
     })
 
     // @ts-expect-error `gasPrice` is not defined
@@ -171,37 +174,37 @@ describe('smoke', () => {
 
   test('transactionRequest (sendTransaction)', async () => {
     const client = createWalletClient({
-      account: '0x',
+      account: EMPTY_HEX_VALUE,
       chain: celo,
       transport: http(),
     })
 
     sendTransaction(client, {
-      feeCurrency: '0x',
+      feeCurrency: EMPTY_HEX_VALUE,
     })
   })
 
   test('transactionRequest (signTransaction)', async () => {
     const client = createWalletClient({
-      account: '0x',
+      account: EMPTY_HEX_VALUE,
       chain: celo,
       transport: http(),
     })
 
     signTransaction(client, {
-      feeCurrency: '0x',
+      feeCurrency: EMPTY_HEX_VALUE,
     })
   })
 
   test('transactionRequest (chain on action)', async () => {
     const client = createWalletClient({
-      account: '0x',
+      account: EMPTY_HEX_VALUE,
       transport: http(),
     })
 
     sendTransaction(client, {
       chain: celo,
-      feeCurrency: '0x',
+      feeCurrency: EMPTY_HEX_VALUE,
     })
   })
 })

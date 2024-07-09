@@ -10,7 +10,11 @@ import {
 } from '../index.js'
 import { parseTransaction } from './parsers.js'
 import { serializeTransaction } from './serializers.js'
-import type { TransactionSerializableCIP64 } from './types.js'
+import type {
+  TransactionSerializableCIP64,
+  TransactionSerializableCIP66,
+} from './types.js'
+import { EMPTY_HEX_VALUE } from './utils.js'
 
 test('should be able to parse a cip42 transaction', () => {
   const signedTransaction =
@@ -172,19 +176,19 @@ describe('should throw an error for invalid cip42 transactions', () => {
     expect(() =>
       parseTransaction(
         `0x7c${toRlp([
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
         ]).slice(2)}`,
       ),
     ).toThrowErrorMatchingInlineSnapshot(`
@@ -273,7 +277,7 @@ describe('should parse a CIP64 transaction', () => {
   test('with data as 0x', () => {
     const transactionWithData: TransactionSerializableCIP64 = {
       ...transactionCip64,
-      data: '0x',
+      data: EMPTY_HEX_VALUE,
     }
 
     const serialized = serializeTransaction(transactionWithData)
@@ -348,17 +352,17 @@ describe('should throw an error for invalid cip64 transactions', () => {
     expect(() =>
       parseTransaction(
         `0x7b${toRlp([
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
-          '0x',
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
+          EMPTY_HEX_VALUE,
         ]).slice(2)}`,
       ),
     ).toThrowErrorMatchingInlineSnapshot(`
@@ -368,6 +372,151 @@ describe('should throw an error for invalid cip64 transactions', () => {
       Missing Attributes: r, s
 
       Version: viem@x.y.z]
+    `)
+  })
+})
+
+describe('should parse a CIP66 transaction', () => {
+  const transactionCip66 = {
+    ...transaction,
+    feeCurrency: '0x765de816845861e75a25fca122bb6898b8b1282a',
+    maxFeeInFeeCurrency: 12345n,
+    chainId: 42270,
+    type: 'cip66',
+  } as TransactionSerializableCIP66
+
+  test('when type is not specified, but the fields match CIP66', () => {
+    const transactionWithoutType = {
+      ...transaction,
+      feeCurrency: '0x765de816845861e75a25fca122bb6898b8b1282a',
+      maxFeeInFeeCurrency: 12345n,
+      type: 'cip66',
+      chainId: 42270,
+    } as TransactionSerializableCIP66
+
+    const serialized = serializeTransaction(transactionWithoutType)
+
+    expect(parseTransaction(serialized)).toMatchInlineSnapshot(`
+        {
+          "chainId": 42270,
+          "feeCurrency": "0x765de816845861e75a25fca122bb6898b8b1282a",
+          "gas": 21001n,
+          "maxFeeInFeeCurrency": 12345n,
+          "maxFeePerGas": 2000000000n,
+          "maxPriorityFeePerGas": 2000000000n,
+          "nonce": 785,
+          "to": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+          "type": "cip66",
+          "value": 1000000000000000000n,
+        }
+    `)
+  })
+
+  test('with access list', () => {
+    const transactionWithAccessList: TransactionSerializableCIP66 = {
+      ...transactionCip66,
+      accessList: [
+        {
+          address: '0x0000000000000000000000000000000000000000',
+          storageKeys: [
+            '0x0000000000000000000000000000000000000000000000000000000000000001',
+            '0x60fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe',
+          ],
+        },
+      ],
+    }
+
+    const serialized = serializeTransaction(transactionWithAccessList)
+
+    expect(parseTransaction(serialized)).toMatchInlineSnapshot(`
+        {
+          "accessList": [
+            {
+              "address": "0x0000000000000000000000000000000000000000",
+              "storageKeys": [
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x60fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe",
+              ],
+            },
+          ],
+          "chainId": 42270,
+          "feeCurrency": "0x765de816845861e75a25fca122bb6898b8b1282a",
+          "gas": 21001n,
+          "maxFeeInFeeCurrency": 12345n,
+          "maxFeePerGas": 2000000000n,
+          "maxPriorityFeePerGas": 2000000000n,
+          "nonce": 785,
+          "to": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+          "type": "cip66",
+          "value": 1000000000000000000n,
+        }
+      `)
+  })
+  test('with data as 0x', () => {
+    const transactionWithData: TransactionSerializableCIP66 = {
+      ...transactionCip66,
+      data: EMPTY_HEX_VALUE,
+    }
+
+    const serialized = serializeTransaction(transactionWithData)
+
+    expect(parseTransaction(serialized)).toMatchInlineSnapshot(`
+        {
+          "chainId": 42270,
+          "feeCurrency": "0x765de816845861e75a25fca122bb6898b8b1282a",
+          "gas": 21001n,
+          "maxFeeInFeeCurrency": 12345n,
+          "maxFeePerGas": 2000000000n,
+          "maxPriorityFeePerGas": 2000000000n,
+          "nonce": 785,
+          "to": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+          "type": "cip66",
+          "value": 1000000000000000000n,
+        }
+      `)
+  })
+  test('with data', () => {
+    const transactionWithData: TransactionSerializableCIP66 = {
+      ...transactionCip66,
+      data: '0x1234',
+    }
+
+    const serialized = serializeTransaction(transactionWithData)
+
+    expect(parseTransaction(serialized)).toMatchInlineSnapshot(`
+        {
+          "chainId": 42270,
+          "data": "0x1234",
+          "feeCurrency": "0x765de816845861e75a25fca122bb6898b8b1282a",
+          "gas": 21001n,
+          "maxFeeInFeeCurrency": 12345n,
+          "maxFeePerGas": 2000000000n,
+          "maxPriorityFeePerGas": 2000000000n,
+          "nonce": 785,
+          "to": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+          "type": "cip66",
+          "value": 1000000000000000000n,
+        }
+      `)
+  })
+
+  test('using example from blockchain repo', () => {
+    // created by celo blockchain client
+    const transaction =
+      '0x7af8ce82a4ec01843b9aca00850342770c0083030d409443d72ff17701b2da814620735c39c620ce0ea4a180b844a9059cbb000000000000000000000000bd8be21f6883569ad7d15cc55c87137fcef308c300000000000000000000000000000000000000000000000001605eba271024d6c094765de816845861e75a25fca122bb6898b8b1282a8501a13b860080a02a015905a494549d8a1da26ce769309963e43f407936bbce1ea8276072b08416a072fd12d24c44bc79648bd88f4d8c158f2f0778694557868b3dc7d80e3aa6b539'
+    expect(parseTransaction(transaction)).toMatchInlineSnapshot(`
+      {
+        "chainId": 42220,
+        "data": "0xa9059cbb000000000000000000000000bd8be21f6883569ad7d15cc55c87137fcef308c300000000000000000000000000000000000000000000000001605eba271024d6",
+        "feeCurrency": "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "gas": 200000n,
+        "maxFeeInFeeCurrency": 7000000000n,
+        "maxFeePerGas": 14000000000n,
+        "maxPriorityFeePerGas": 1000000000n,
+        "nonce": 1,
+        "to": "0x43d72ff17701b2da814620735c39c620ce0ea4a1",
+        "type": "cip66",
+      }
     `)
   })
 })

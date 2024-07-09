@@ -16,6 +16,7 @@ import { serializeTransaction } from './serializers.js'
 import type {
   TransactionSerializableCIP42,
   TransactionSerializableCIP64,
+  TransactionSerializableCIP66,
 } from './types.js'
 
 import type { TransactionSerializableDeposit } from '../op-stack/types/transaction.js'
@@ -41,6 +42,13 @@ const baseCip64 = {
   maxFeePerGas: parseGwei('2'),
   maxPriorityFeePerGas: parseGwei('2'),
 } as TransactionSerializableCIP64
+
+const baseCip66 = {
+  ...commonBaseTx,
+  maxFeePerGas: parseGwei('2'),
+  maxPriorityFeePerGas: parseGwei('2'),
+  maxFeeInFeeCurrency: parseGwei('12345'),
+} as TransactionSerializableCIP66
 
 describe('cip64', () => {
   test('should be able to serialize a cip64 transaction', () => {
@@ -238,6 +246,202 @@ describe('cip64', () => {
   })
 })
 
+describe('cip66', () => {
+  test('should be able to serialize a cip66 transaction', () => {
+    const serialized = serializeTransaction(baseCip66)
+    const reparsed = parseTransaction(serialized)
+    const reserialized = serializeTransaction(reparsed)
+    expect(serialized).toEqual(
+      '0x7af84b82a4ec01847735940084773594008094f39fd6e51aad88f6f4ce6ab8827279cfffb92266880de0b6b3a764000080c094765de816845861e75a25fca122bb6898b8b1282a860b3a4b56fa00',
+    )
+    expect(reparsed).toEqual({ ...baseCip66, type: 'cip66' })
+    expect(serialized).toEqual(reserialized)
+  })
+
+  test('args: accessList', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      accessList: [
+        {
+          address: '0x0000000000000000000000000000000000000000',
+          storageKeys: [
+            '0x0000000000000000000000000000000000000000000000000000000000000001',
+            '0x60fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe',
+          ],
+        },
+      ],
+    }
+
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: data', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      data: '0x1234',
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: gas', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      gas: 69420n,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: gas (absent)', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      gas: undefined,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: maxFeePerGas (absent)', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      type: 'cip66',
+      maxFeePerGas: undefined,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: maxPriorityFeePerGas (absent)', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      type: 'cip66',
+      maxPriorityFeePerGas: undefined,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: nonce (absent)', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      nonce: undefined,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: to (absent)', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      to: undefined,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('args: value (absent)', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      value: undefined,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('type is undefined but has cip66 fields (feeCurrency, but not gateway*)', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      feeCurrency: '0xd8763cba276a3738e6de85b4b3bf5fded6d6ca73',
+      type: undefined,
+    }
+    expect(parseTransaction(serializeTransaction(transaction))).toEqual({
+      ...transaction,
+      type: 'cip66',
+    })
+  })
+
+  test('signed', async () => {
+    const signed = await signTransaction({
+      privateKey: accounts[0].privateKey,
+      transaction: baseCip66,
+      serializer: serializeTransaction,
+    })
+
+    const serialized =
+      '0x7af88e82a4ec01847735940084773594008094f39fd6e51aad88f6f4ce6ab8827279cfffb92266880de0b6b3a764000080c094765de816845861e75a25fca122bb6898b8b1282a860b3a4b56fa0001a0f376d59efea3eb24397b74303b6225aeb6d32ca57f2854c4454c49c779cd68dda0214b12ee3d68b7aec1dc43ee5e668bd76ba3a805350e8ae9ca54a381ac9871e8'
+    expect(signed).toEqual(serialized)
+    expect(parseTransaction(signed)).toEqual({
+      ...baseCip66,
+      type: 'cip66',
+    })
+  })
+
+  test('signature', () => {
+    const tx1 =
+      '0x7af88e82a4ec01847735940084773594008094f39fd6e51aad88f6f4ce6ab8827279cfffb92266880de0b6b3a764000080c094765de816845861e75a25fca122bb6898b8b1282a860b3a4b56fa0001a060fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fea060fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe'
+    const tx2 =
+      '0x7af88e82a4ec01847735940084773594008094f39fd6e51aad88f6f4ce6ab8827279cfffb92266880de0b6b3a764000080c094765de816845861e75a25fca122bb6898b8b1282a860b3a4b56fa0080a060fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fea060fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe'
+
+    expect(
+      serializeTransaction(
+        baseCip66,
+
+        {
+          r: '0x60fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe',
+          s: '0x60fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe',
+          yParity: 1,
+        },
+      ),
+    ).toEqual(tx1)
+    expect(
+      serializeTransaction(
+        baseCip66,
+
+        {
+          r: '0x60fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe',
+          s: '0x60fdd29ff912ce880cd3edaf9f932dc61d3dae823ea77e0323f94adb9f6a72fe',
+          yParity: 0,
+        },
+      ),
+    ).toEqual(tx2)
+    expect(parseTransaction(tx1)).toEqual(parseTransaction(tx2))
+    expect(parseTransaction(tx1)).toEqual({ ...baseCip66, type: 'cip66' })
+  })
+
+  test('CIP-42 transaction that has all CIP-64 fields and CIP-64 takes precedence', () => {
+    const transaction: TransactionSerializableCIP42 = {
+      ...baseCip42,
+      gatewayFeeRecipient: undefined,
+      gatewayFee: undefined,
+      type: 'cip42',
+    }
+    expect(parseTransaction(serializeTransaction(transaction as any))).toEqual({
+      ...transaction,
+      type: 'cip64',
+    })
+  })
+})
+
 describe('invalid params specific to CIP-64', () => {
   test('transaction looks like cip64 but does not have a value for feeCurrency', () => {
     const transaction: TransactionSerializableCIP64 = {
@@ -247,6 +451,19 @@ describe('invalid params specific to CIP-64', () => {
     }
     expect(() => serializeTransaction(transaction)).toThrowError(
       '`feeCurrency` must be provided for CIP-64 transactions.',
+    )
+  })
+})
+
+describe('invalid params specific to CIP-66', () => {
+  test('transaction looks like cip66 but does not have a value for feeCurrency', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      type: 'cip66',
+      feeCurrency: undefined,
+    }
+    expect(() => serializeTransaction(transaction)).toThrowError(
+      '`feeCurrency` must be provided for CIP-66 transactions.',
     )
   })
 })
@@ -312,6 +529,76 @@ describe('Common invalid params (for CIP-64)', () => {
   test('chainID is invalid', () => {
     const transaction: TransactionSerializableCIP64 = {
       ...baseCip64,
+      chainId: -1,
+    }
+
+    expect(() => serializeTransaction(transaction)).toThrowError(
+      `Chain ID "${-1}" is invalid.`,
+    )
+  })
+})
+
+describe('Common invalid params (for CIP-66)', () => {
+  test('invalid to', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      to: '0xdeadbeef',
+    }
+    expect(() => serializeTransaction(transaction)).toThrowError(
+      InvalidAddressError,
+    )
+  })
+
+  test('maxPriorityFeePerGas is higher than maxPriorityFee', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      maxPriorityFeePerGas: parseGwei('5000000000'),
+      maxFeePerGas: parseGwei('1'),
+    }
+    expect(() => serializeTransaction(transaction)).toThrowError(
+      TipAboveFeeCapError,
+    )
+  })
+
+  test('maxFeePerGas is too high', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      maxPriorityFeePerGas: parseGwei('5000000000'),
+      maxFeePerGas:
+        115792089237316195423570985008687907853269984665640564039457584007913129639938n,
+    }
+    expect(() => serializeTransaction(transaction)).toThrowError(
+      FeeCapTooHighError,
+    )
+  })
+
+  test('feeCurrency is not an address', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      // @ts-expect-error
+      feeCurrency: 'CUSD',
+    }
+
+    expect(() => serializeTransaction(transaction)).toThrowError(
+      '`feeCurrency` MUST be a token address for CIP-66 transactions.',
+    )
+  })
+
+  test('gasPrice is defined', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
+      // @ts-expect-error
+      gasPrice: BigInt(1),
+    }
+
+    expect(() => serializeTransaction(transaction)).toThrowError(
+      '`gasPrice` is not a valid CIP-66 Transaction attribute.',
+    )
+  })
+
+  test('chainID is invalid', () => {
+    const transaction: TransactionSerializableCIP66 = {
+      ...baseCip66,
       chainId: -1,
     }
 

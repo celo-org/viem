@@ -54,7 +54,7 @@ test('ExtractChainFormatterParameters', () => {
     TransactionRequest
   >
   expectTypeOf<Result3['type']>().toEqualTypeOf<
-    'legacy' | 'eip2930' | 'eip1559' | 'eip4844' | 'cip64' | undefined
+    'legacy' | 'eip2930' | 'eip1559' | 'eip4844' | 'cip64' | 'cip66' | undefined
   >()
   expectTypeOf<Result3['feeCurrency']>().toEqualTypeOf<
     `0x${string}` | undefined

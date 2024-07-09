@@ -1,6 +1,7 @@
 import type { ChainFormatters } from '../types/chain.js'
 import type { RpcTransaction } from '../types/rpc.js'
 import { hexToBigInt } from '../utils/encoding/fromHex.js'
+import { numberToHex } from '../utils/encoding/toHex.js'
 import { defineBlock } from '../utils/formatters/block.js'
 import {
   defineTransaction,
@@ -15,7 +16,7 @@ import type {
   CeloTransaction,
   CeloTransactionRequest,
 } from './types.js'
-import { isCIP64 } from './utils.js'
+import { isCIP64, isCIP66 } from './utils.js'
 
 export const formatters = {
   block: /*#__PURE__*/ defineBlock({
@@ -23,8 +24,17 @@ export const formatters = {
       const transactions = args.transactions?.map((transaction) => {
         if (typeof transaction === 'string') return transaction
         const formatted = formatTransaction(transaction as RpcTransaction)
+
         return {
           ...formatted,
+          ...(transaction.maxFeeInFeeCurrency
+            ? {
+                maxFeeInFeeCurrency:
+                  typeof transaction.maxFeeInFeeCurrency === 'string'
+                    ? hexToBigInt(transaction.maxFeeInFeeCurrency)
+                    : transaction.maxFeeInFeeCurrency,
+              }
+            : {}),
           ...(transaction.gatewayFee
             ? {
                 gatewayFee: hexToBigInt(transaction.gatewayFee),
@@ -52,8 +62,14 @@ export const formatters = {
 
       const transaction = { feeCurrency: args.feeCurrency } as CeloTransaction
 
-      if (args.type === '0x7b') transaction.type = 'cip64'
-      else {
+      if (args.type === '0x7a') {
+        transaction.type = 'cip66'
+        transaction.maxFeeInFeeCurrency = args.maxFeeInFeeCurrency
+          ? hexToBigInt(args.maxFeeInFeeCurrency)
+          : undefined
+      } else if (args.type === '0x7b') {
+        transaction.type = 'cip64'
+      } else {
         if (args.type === '0x7c') transaction.type = 'cip42'
 
         transaction.gatewayFee = args.gatewayFee
@@ -69,8 +85,17 @@ export const formatters = {
     format(args: CeloTransactionRequest): CeloRpcTransactionRequest {
       const request = {} as CeloRpcTransactionRequest
 
+      if (isCIP66(args)) {
+        request.type = '0x7a'
+        request.maxFeeInFeeCurrency =
+          typeof args.maxFeeInFeeCurrency !== 'undefined'
+            ? numberToHex(args.maxFeeInFeeCurrency)
+            : undefined
+      } else if (isCIP64(args)) {
+        request.type = '0x7b'
+      }
+
       if (args.feeCurrency) request.feeCurrency = args.feeCurrency
-      if (isCIP64(args)) request.type = '0x7b'
 
       return request
     },

@@ -15,16 +15,30 @@ import type {
   CeloTransactionSerializable,
   TransactionSerializableCIP42,
   TransactionSerializableCIP64,
+  TransactionSerializableCIP66,
   TransactionSerializedCIP64,
+  TransactionSerializedCIP66,
 } from './types.js'
-import { isCIP64, isEmpty, isPresent } from './utils.js'
+import {
+  EMPTY_HEX_VALUE,
+  isCIP64,
+  isCIP66,
+  isEmpty,
+  isPresent,
+} from './utils.js'
 
 export function serializeTransaction(
   transaction: CeloTransactionSerializable,
   signature?: Signature | undefined,
 ) {
-  if (isCIP64(transaction))
+  if (isCIP66(transaction)) {
+    return serializeTransactionCIP66(transaction, signature)
+  }
+
+  if (isCIP64(transaction)) {
     return serializeTransactionCIP64(transaction, signature)
+  }
+
   return serializeTransaction_op(transaction, signature)
 }
 
@@ -36,6 +50,7 @@ export const serializers = {
 // Serializers
 
 export type SerializeTransactionCIP64ReturnType = TransactionSerializedCIP64
+export type SerializeTransactionCIP66ReturnType = TransactionSerializedCIP66
 
 function serializeTransactionCIP64(
   transaction: TransactionSerializableCIP64,
@@ -57,13 +72,13 @@ function serializeTransactionCIP64(
 
   const serializedTransaction = [
     toHex(chainId),
-    nonce ? toHex(nonce) : '0x',
-    maxPriorityFeePerGas ? toHex(maxPriorityFeePerGas) : '0x',
-    maxFeePerGas ? toHex(maxFeePerGas) : '0x',
-    gas ? toHex(gas) : '0x',
-    to ?? '0x',
-    value ? toHex(value) : '0x',
-    data ?? '0x',
+    nonce ? toHex(nonce) : EMPTY_HEX_VALUE,
+    maxPriorityFeePerGas ? toHex(maxPriorityFeePerGas) : EMPTY_HEX_VALUE,
+    maxFeePerGas ? toHex(maxFeePerGas) : EMPTY_HEX_VALUE,
+    gas ? toHex(gas) : EMPTY_HEX_VALUE,
+    to ?? EMPTY_HEX_VALUE,
+    value ? toHex(value) : EMPTY_HEX_VALUE,
+    data ?? EMPTY_HEX_VALUE,
     serializeAccessList(accessList),
     feeCurrency!,
     ...toYParitySignatureArray(transaction, signature),
@@ -73,6 +88,47 @@ function serializeTransactionCIP64(
     '0x7b',
     toRlp(serializedTransaction),
   ]) as SerializeTransactionCIP64ReturnType
+}
+
+function serializeTransactionCIP66(
+  transaction: TransactionSerializableCIP66,
+  signature?: Signature | undefined,
+): SerializeTransactionCIP66ReturnType {
+  assertTransactionCIP66(transaction)
+
+  const {
+    chainId,
+    gas,
+    nonce,
+    to,
+    value,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+    accessList,
+    feeCurrency,
+    maxFeeInFeeCurrency,
+    data,
+  } = transaction
+
+  const serializedTransaction = [
+    toHex(chainId),
+    nonce ? toHex(nonce) : EMPTY_HEX_VALUE,
+    maxPriorityFeePerGas ? toHex(maxPriorityFeePerGas) : EMPTY_HEX_VALUE,
+    maxFeePerGas ? toHex(maxFeePerGas) : EMPTY_HEX_VALUE,
+    gas ? toHex(gas) : EMPTY_HEX_VALUE,
+    to ?? EMPTY_HEX_VALUE,
+    value ? toHex(value) : EMPTY_HEX_VALUE,
+    data ?? EMPTY_HEX_VALUE,
+    serializeAccessList(accessList),
+    feeCurrency!,
+    toHex(maxFeeInFeeCurrency!),
+    ...toYParitySignatureArray(transaction, signature),
+  ]
+
+  return concatHex([
+    '0x7a',
+    toRlp(serializedTransaction),
+  ]) as SerializeTransactionCIP66ReturnType
 }
 
 // maxFeePerGas must be less than 2^256 - 1
@@ -134,8 +190,11 @@ export function assertTransactionCIP42(
   }
 }
 
+type Cip64OrCip66 = 'CIP-64' | 'CIP-66'
+
 export function assertTransactionCIP64(
   transaction: TransactionSerializableCIP64,
+  type: Cip64OrCip66 = 'CIP-64',
 ) {
   const {
     chainId,
@@ -151,7 +210,7 @@ export function assertTransactionCIP64(
 
   if (gasPrice)
     throw new BaseError(
-      '`gasPrice` is not a valid CIP-64 Transaction attribute.',
+      `\`gasPrice\` is not a valid ${type} Transaction attribute.`,
     )
 
   if (isPresent(maxFeePerGas) && maxFeePerGas > MAX_MAX_FEE_PER_GAS)
@@ -165,13 +224,27 @@ export function assertTransactionCIP64(
 
   if (isPresent(feeCurrency) && !isAddress(feeCurrency)) {
     throw new BaseError(
-      '`feeCurrency` MUST be a token address for CIP-64 transactions.',
+      `\`feeCurrency\` MUST be a token address for ${type} transactions.`,
     )
   }
 
   if (isEmpty(feeCurrency)) {
     throw new BaseError(
-      '`feeCurrency` must be provided for CIP-64 transactions.',
+      `\`feeCurrency\` must be provided for ${type} transactions.`,
+    )
+  }
+}
+
+export function assertTransactionCIP66(
+  transaction: TransactionSerializableCIP66,
+) {
+  assertTransactionCIP64(transaction as TransactionSerializableCIP64, 'CIP-66')
+
+  const { maxFeeInFeeCurrency } = transaction
+
+  if (isEmpty(maxFeeInFeeCurrency)) {
+    throw new BaseError(
+      '`maxFeeInFeeCurrency` must be provided for CIP-66 transactions.',
     )
   }
 }

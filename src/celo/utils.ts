@@ -4,6 +4,7 @@ import type {
   CeloTransactionRequest,
   CeloTransactionSerializable,
   TransactionSerializableCIP64,
+  TransactionSerializableCIP66,
 } from './types.js'
 
 export function isEmpty(
@@ -17,7 +18,7 @@ export function isEmpty(
     value === '0' ||
     value === '' ||
     (typeof value === 'string' &&
-      (trim(value as Address).toLowerCase() === '0x' ||
+      (trim(value as Address).toLowerCase() === EMPTY_HEX_VALUE ||
         trim(value as Address).toLowerCase() === '0x00'))
   )
 }
@@ -57,3 +58,19 @@ export function isCIP64(
 
   return isEIP1559(transaction) && isPresent(transaction.feeCurrency)
 }
+
+export function isCIP66(
+  transaction: CeloTransactionSerializable | CeloTransactionRequest,
+): transaction is TransactionSerializableCIP66 {
+  if (transaction.type === 'cip66') {
+    return true
+  }
+
+  return (
+    isEIP1559(transaction) &&
+    isPresent(transaction.feeCurrency) &&
+    isPresent(transaction.maxFeeInFeeCurrency)
+  )
+}
+
+export const EMPTY_HEX_VALUE = '0x'
