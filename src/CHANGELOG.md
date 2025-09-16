@@ -1,5 +1,15 @@
 # viem
 
+## 2.37.7
+
+### Patch Changes
+
+- [#3821](https://github.com/wevm/viem/pull/3821) [`4cc9a5075db20be20f7e5b0225b950cce38da130`](https://github.com/wevm/viem/commit/4cc9a5075db20be20f7e5b0225b950cce38da130) Thanks [@aaronmgdr](https://github.com/aaronmgdr)! - Added Celo Sepolia chain.
+
+- [#3949](https://github.com/wevm/viem/pull/3949) [`dffbdc2762d776f90317b4e191e1631a4df8df3a`](https://github.com/wevm/viem/commit/dffbdc2762d776f90317b4e191e1631a4df8df3a) Thanks [@mmabbasi77](https://github.com/mmabbasi77)! - Added ICB Network chain.
+
+- [#3952](https://github.com/wevm/viem/pull/3952) [`9cf65b7fe846c0755bdd8bf3b0d820e0d7623986`](https://github.com/wevm/viem/commit/9cf65b7fe846c0755bdd8bf3b0d820e0d7623986) Thanks [@jeffgeudens](https://github.com/jeffgeudens)! - Added Botanix chain and modified Botanix Testnet
+
 ## 2.37.6
 
 ### Patch Changes
